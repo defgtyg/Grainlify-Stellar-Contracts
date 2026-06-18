@@ -623,6 +623,14 @@ pub enum BatchError {
     DuplicateProgramId = 3,
 }
 
+#[contracterror]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[repr(u32)]
+pub enum Error {
+    /// Governance contract version is below the minimum required for admin operations.
+    GovernanceVersionTooLow = 4,
+}
+
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PayoutApproval {
@@ -979,7 +987,12 @@ impl ProgramEscrowContract {
     }
 
     /// Update pause flags (admin only)
-    pub fn set_paused(env: Env, lock: Option<bool>, release: Option<bool>, refund: Option<bool>) {
+    pub fn set_paused(
+        env: Env,
+        lock: Option<bool>,
+        release: Option<bool>,
+        refund: Option<bool>,
+    ) -> Result<(), Error> {
         if !env.storage().instance().has(&DataKey::Admin) {
             panic!("Not initialized");
         }
@@ -988,7 +1001,7 @@ impl ProgramEscrowContract {
         admin.require_auth();
 
         // Check governance requirements
-        Self::check_governance_requirements(&env);
+        Self::check_governance_requirements(&env)?;
 
         let mut flags = Self::get_pause_flags(&env);
 
@@ -1017,6 +1030,7 @@ impl ProgramEscrowContract {
         }
 
         env.storage().instance().set(&DataKey::PauseFlags, &flags);
+        Ok(())
     }
 
     /// Get current pause flags
@@ -1265,7 +1279,7 @@ impl ProgramEscrowContract {
         window_size: u64,
         max_operations: u32,
         cooldown_period: u64,
-    ) {
+    ) -> Result<(), Error> {
         // Only admin can update rate limit config
         let admin: Address = env
             .storage()
@@ -1275,7 +1289,7 @@ impl ProgramEscrowContract {
         admin.require_auth();
 
         // Check governance requirements
-        Self::check_governance_requirements(&env);
+        Self::check_governance_requirements(&env)?;
 
         let config = RateLimitConfig {
             window_size,
@@ -1285,6 +1299,7 @@ impl ProgramEscrowContract {
         env.storage()
             .instance()
             .set(&DataKey::RateLimitConfig, &config);
+        Ok(())
     }
 
     pub fn get_rate_limit_config(env: Env) -> RateLimitConfig {
@@ -1345,10 +1360,11 @@ impl ProgramEscrowContract {
     }
 
     /// Check if governance requirements are met before admin operations
-    fn check_governance_requirements(env: &Env) {
+    fn check_governance_requirements(env: &Env) -> Result<(), Error> {
         if !governance_integration::check_governance_version(env) {
-            panic!("Governance version requirement not met");
+            return Err(Error::GovernanceVersionTooLow);
         }
+        Ok(())
     }
     // ========================================================================
     // Payout Functions

@@ -73,6 +73,7 @@ export enum ContractErrorCode {
   OVERFLOW                 = 'OVERFLOW',
   AMOUNT_BELOW_MIN         = 'AMOUNT_BELOW_MIN',
   AMOUNT_ABOVE_MAX         = 'AMOUNT_ABOVE_MAX',
+  GOVERNANCE_VERSION_TOO_LOW = 'GOVERNANCE_VERSION_TOO_LOW',
 
   // ── Bounty-Escrow (contracts/bounty_escrow) ────────────────────────────
   BOUNTY_ALREADY_INITIALIZED = 'BOUNTY_ALREADY_INITIALIZED',   // 1
@@ -96,6 +97,7 @@ export enum ContractErrorCode {
   BOUNTY_AMOUNT_ABOVE_MAXIMUM = 'BOUNTY_AMOUNT_ABOVE_MAXIMUM', // 20
   BOUNTY_CIRCUIT_BREAKER_OPEN = 'BOUNTY_CIRCUIT_BREAKER_OPEN', // 21
   BOUNTY_CLAIM_EXPIRED        = 'BOUNTY_CLAIM_EXPIRED',        // 22
+  BOUNTY_GOVERNANCE_VERSION_TOO_LOW = 'BOUNTY_GOVERNANCE_VERSION_TOO_LOW', // 23
 
   // ── Governance (contracts/grainlify-core/governance) ───────────────────
   GOV_NOT_INITIALIZED        = 'GOV_NOT_INITIALIZED',          // 1
@@ -135,6 +137,7 @@ const CONTRACT_ERROR_MESSAGES: Record<ContractErrorCode, string> = {
   [ContractErrorCode.OVERFLOW]:                  'Payout amount overflow',
   [ContractErrorCode.AMOUNT_BELOW_MIN]:          'Amount is below the minimum allowed by policy',
   [ContractErrorCode.AMOUNT_ABOVE_MAX]:          'Amount exceeds the maximum allowed by policy',
+  [ContractErrorCode.GOVERNANCE_VERSION_TOO_LOW]: 'Linked governance contract version is below the required minimum',
 
   // Bounty-Escrow
   [ContractErrorCode.BOUNTY_ALREADY_INITIALIZED]: 'Bounty escrow contract is already initialized',
@@ -158,6 +161,7 @@ const CONTRACT_ERROR_MESSAGES: Record<ContractErrorCode, string> = {
   [ContractErrorCode.BOUNTY_AMOUNT_ABOVE_MAXIMUM]: 'Bounty amount exceeds the configured maximum',
   [ContractErrorCode.BOUNTY_CIRCUIT_BREAKER_OPEN]: 'Bounty escrow circuit breaker is open',
   [ContractErrorCode.BOUNTY_CLAIM_EXPIRED]:        'Authorized bounty claim window has expired',
+  [ContractErrorCode.BOUNTY_GOVERNANCE_VERSION_TOO_LOW]: 'Linked governance contract version is below the bounty escrow minimum',
 
   // Governance
   [ContractErrorCode.GOV_NOT_INITIALIZED]:        'Governance contract has not been initialized',
@@ -185,6 +189,11 @@ const CONTRACT_ERROR_MESSAGES: Record<ContractErrorCode, string> = {
 // Numeric code → ContractErrorCode look-up tables (per contract)
 // ---------------------------------------------------------------------------
 
+/** Program-escrow #[contracterror] discriminants → SDK code */
+export const PROGRAM_ESCROW_ERROR_MAP: Record<number, ContractErrorCode> = {
+  4: ContractErrorCode.GOVERNANCE_VERSION_TOO_LOW,
+};
+
 /** Bounty-escrow #[contracterror] discriminants → SDK code */
 export const BOUNTY_ESCROW_ERROR_MAP: Record<number, ContractErrorCode> = {
   1:  ContractErrorCode.BOUNTY_ALREADY_INITIALIZED,
@@ -208,6 +217,7 @@ export const BOUNTY_ESCROW_ERROR_MAP: Record<number, ContractErrorCode> = {
   20: ContractErrorCode.BOUNTY_AMOUNT_ABOVE_MAXIMUM,
   21: ContractErrorCode.BOUNTY_CIRCUIT_BREAKER_OPEN,
   22: ContractErrorCode.BOUNTY_CLAIM_EXPIRED,
+  23: ContractErrorCode.BOUNTY_GOVERNANCE_VERSION_TOO_LOW,
 };
 
 /** Governance #[contracterror] discriminants → SDK code */
@@ -257,9 +267,10 @@ export function createContractError(errorCode: ContractErrorCode, details?: stri
  */
 export function parseContractErrorByCode(
   numericCode: number,
-  contract: 'bounty_escrow' | 'governance' | 'circuit_breaker',
+  contract: 'program_escrow' | 'bounty_escrow' | 'governance' | 'circuit_breaker',
 ): ContractError {
   const maps: Record<string, Record<number, ContractErrorCode>> = {
+    program_escrow:  PROGRAM_ESCROW_ERROR_MAP,
     bounty_escrow:   BOUNTY_ESCROW_ERROR_MAP,
     governance:      GOVERNANCE_ERROR_MAP,
     circuit_breaker: CIRCUIT_BREAKER_ERROR_MAP,
@@ -288,6 +299,7 @@ export function parseContractErrorByCode(
  */
 export function parseContractError(error: any): ContractError {
   const errorMessage = error?.message || error?.toString() || 'Unknown contract error';
+  const hasBountyContext = /bounty/i.test(errorMessage);
 
   // ── Program-escrow patterns ────────────────────────────────────────────
   if (errorMessage.includes('not initialized') || errorMessage.includes('Program not initialized')) {
@@ -319,6 +331,9 @@ export function parseContractError(error: any): ContractError {
   }
   if (errorMessage.includes('overflow')) {
     return createContractError(ContractErrorCode.OVERFLOW);
+  }
+  if (!hasBountyContext && (errorMessage.includes('GovernanceVersionTooLow') || errorMessage.includes('Governance version requirement not met'))) {
+    return createContractError(ContractErrorCode.GOVERNANCE_VERSION_TOO_LOW);
   }
 
   // ── Bounty-escrow patterns ─────────────────────────────────────────────
@@ -366,6 +381,9 @@ export function parseContractError(error: any): ContractError {
   }
   if (errorMessage.includes('FundsPaused') || errorMessage.includes('funds are currently paused')) {
     return createContractError(ContractErrorCode.BOUNTY_FUNDS_PAUSED);
+  }
+  if (hasBountyContext && (errorMessage.includes('GovernanceVersionTooLow') || errorMessage.includes('governance version'))) {
+    return createContractError(ContractErrorCode.BOUNTY_GOVERNANCE_VERSION_TOO_LOW);
   }
   if (errorMessage.includes('CircuitBreakerOpen')) {
     return createContractError(ContractErrorCode.BOUNTY_CIRCUIT_BREAKER_OPEN);
