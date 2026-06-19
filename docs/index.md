@@ -50,3 +50,60 @@ Welcome to the Grainlify Stellar Contracts documentation. This index provides a 
 
 | Document | Description |
 |----------|-------------|
+| [Event Schema](EVENT_SCHEMA.md) | Comprehensive event schema reference for all contracts |
+| [Event Versioning](EVENT_VERSIONING.md) | Event payload versioning rules and compatibility |
+
+## Governance
+
+| Document | Description |
+|----------|-------------|
+| [Governance Integration](GOVERNANCE_INTEGRATION.md) | Governance integration across contracts |
+
+## Queries and SDK
+
+| Document | Description |
+|----------|-------------|
+| [Query Documentation](QUERY_DOCUMENTATION.md) | Query function reference and usage |
+| [Query Quick Reference](QUERY_QUICK_REFERENCE.md) | Quick reference for query functions |
+| [SDK README](../sdk/README.md) | TypeScript SDK overview and usage |
+| [SDK API Reference](sdk/api/README.md) | Generated TypeDoc reference for SDK classes, methods, and exported types |
+| [SDK Error Mapping](sdk/ERROR_MAPPING.md) | SDK error types and mapping |
+
+## Security
+
+| Document | Description |
+|----------|-------------|
+| [Bounty Escrow Security](bounty_escrow/SECURITY.md) | Security model for the bounty escrow contract |
+| [Reentrancy Guard](program-escrow/REENTRANCY_GUARD_DOCUMENTATION.md) | Reentrancy guard for program escrow |
+| [Circuit Breaker](bounty_escrow/CIRCUIT_BREAKER.md) | Circuit breaker safety mechanism |
+
+## Testing and Delivery
+
+| Document | Description |
+|----------|-------------|
+| [Admin Tests Summary](ADMIN_TESTS_SUMMARY.md) | Admin function test coverage summary |
+| [Implementation Summary](IMPLEMENTATION_SUMMARY.md) | Escrow history query implementation summary |
+| [Feature Delivery Summary](FEATURE_DELIVERY_SUMMARY.md) | Bounty escrow analytics feature delivery |
+
+## Soroban
+
+| Document | Description |
+|----------|-------------|
+| [Soroban README](soroban/README.md) | Soroban project structure and setup |
+
+## Scripts
+
+| Document | Description |
+|----------|-------------|
+| [Scripts README](../scripts/README.md) | Build, deployment, and utility scripts |
+| [Deployment Runbook](DEPLOYMENT_RUNBOOK.md) | End-to-end deploy, verify, upgrade, rollback, registry, and mainnet safety procedures |
+
+---
+
+## Navigation Guide
+
+- **New contributors**: Start with [Architecture](ARCHITECTURE.md) and [Contributing](CONTRIBUTING.md)
+- **Contract developers**: Review the contract-specific sections under [Contracts](#contracts)
+- **Frontend/SDK developers**: See [Queries and SDK](#queries-and-sdk)
+- **Security reviewers**: Focus on the [Security](#security) section
+- **Event consumers**: Refer to [Events](#events) for schema and versioning
